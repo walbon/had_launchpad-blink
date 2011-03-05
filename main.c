@@ -28,7 +28,7 @@ Copyright (c) 2010 - Mike Szczys
 		That the MPS430x2012 is closely related and
 		I haven't observed any problems with using this
 		header file. */
-#include <msp430g2231.h>
+//#include <msp430g2231.h>
 #include <io.h>
 #include <signal.h>
 
