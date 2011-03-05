@@ -28,21 +28,26 @@ Copyright (c) 2010 - Mike Szczys
 		That the MPS430x2012 is closely related and
 		I haven't observed any problems with using this
 		header file. */
+#include <msp430g2231.h>
 #include <io.h>
 #include <signal.h>
 
-
-#define     LED0                  BIT0
-#define     LED1                  BIT6
+#define     RED                   BIT0
+#define     GREEN                 BIT6
 #define     LED_DIR               P1DIR
 #define     LED_OUT               P1OUT
+#define     BUTTON                BIT3
+//
+//blink or rot
+//#define BLINK
 
 
 void initLEDs(void) {
-  LED_DIR |= LED0 + LED1;	//Set LED pins as outputs
-  LED_OUT |= LED0 + LED1;	//Turn on both LEDs
+  LED_DIR |= RED + GREEN;	//Set LED pins as outputs
+  LED_OUT |= RED + GREEN;	//Turn on both LEDs
 }
 
+int n = 0;
 
 int main(void) {
 
@@ -61,13 +66,13 @@ int main(void) {
 
   BCSCTL3 |= LFXT1S_2;	//Set ACLK to use internal VLO (12 kHz clock)
 
-  TACTL = TASSEL__ACLK | MC__UP;	//Set TimerA to use auxiliary clock in UP mode
+  TACTL = TASSEL_1 | MC_1;	//Set TimerA to use auxiliary clock in UP mode
   TACCTL0 = CCIE;	//Enable the interrupt for TACCR0 match
-  TACCR0 = 11999;	/*Set TACCR0 which also starts the timer. At
+  TACCR0 = 3000;	/*Set TACCR0 which also starts the timer. At
 				12 kHz, counting to 12000 should output
 				an LED change every 1 second. Try this
 				out and see how inaccurate the VLO can be */
-			
+
   WRITE_SR(GIE);	//Enable global interrupts
 
   while(1) {
@@ -76,7 +81,20 @@ int main(void) {
 }
 
 interrupt(TIMERA0_VECTOR) TIMERA0_ISR(void) {
-  LED_OUT ^= (LED0 + LED1);	//Toggle both LEDs
+  int color = 0;
+
+  n += 1;
+  n = n % 8;
+  if (n == 0) {
+    color = RED;
+  } else {
+    color = GREEN;
+  }
+  if (n %2) {
+    LED_OUT = 0;
+  } else {
+    LED_OUT = (color);	//turn on
+  }
 }
 
 
