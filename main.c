@@ -42,7 +42,7 @@ Copyright (c) 2010 - Mike Szczys
 
 
 void initLEDs(void) {
-  LED_DIR |= LED0 + LED1;	//Set LED pins as outputs
+  LED_DIR |= LED0 + LED1 + BIT7;	//Set LED pins as outputs
   LED_OUT |= LED0 + LED1;	//Turn on both LEDs
 }
 
@@ -51,15 +51,6 @@ int n = 0;
 int main(void) {
 
   WDTCTL = WDTPW + WDTHOLD;	// Stop WDT
-  /*Halt the watchdog timer
-      According to the datasheet the watchdog timer
-      starts automatically after powerup. It must be
-      configured or halted at the beginning of code
-      execution to avoid a system reset. Furthermore,
-      the watchdog timer register (WDTCTL) is
-      password protected, and requires the upper byte
-      during write operations to be 0x5A, which is the
-      value associated with WDTPW.*/
 
   initLEDs();		//Setup LEDs
 
@@ -80,9 +71,9 @@ int main(void) {
 }
 
 interrupt(TIMERA0_VECTOR) TIMERA0_ISR(void) {
-#ifdef BLINK
-      LED_OUT ^= (LED0 + LED1);	//turn on
-#endif
+      LED_OUT ^= (LED0 +  BIT7);	//turn on
+
+/*
 #ifndef BLINK
   n += 1;
   n = n % 3;
@@ -104,6 +95,7 @@ interrupt(TIMERA0_VECTOR) TIMERA0_ISR(void) {
   }
 #endif
 #endif
+*/
 }
 
 
