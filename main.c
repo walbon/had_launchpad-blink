@@ -33,7 +33,14 @@ Copyright (c) 2010 - Mike Szczys
 #include <signal.h>
 
 #define     LED0                  BIT0
-#define     LED1                  BIT6
+#define     LED1                  BIT1
+#define     LED2                  BIT2
+#define     LED3                  BIT3
+#define     LED4                  BIT4
+#define     LED5                  BIT5
+#define     LED6                  BIT6
+#define     LED7                  BIT7
+#define     ALL_LEDS              (BIT0 + BIT1 + BIT2 + BIT3 + BIT4 + BIT5 + BIT6 + BIT7)
 #define     LED_DIR               P1DIR
 #define     LED_OUT               P1OUT
 //
@@ -42,8 +49,8 @@ Copyright (c) 2010 - Mike Szczys
 
 
 void initLEDs(void) {
-  LED_DIR |= LED0 + LED1 + BIT7;	//Set LED pins as outputs
-  LED_OUT |= LED0 + LED1;	//Turn on both LEDs
+  LED_DIR |= ALL_LEDS;
+  LED_OUT |= ALL_LEDS;
 }
 
 int n = 0;
@@ -58,7 +65,7 @@ int main(void) {
 
   TACTL = TASSEL_1 | MC_1;	//Set TimerA to use auxiliary clock in UP mode
   TACCTL0 = CCIE;	//Enable the interrupt for TACCR0 match
-  TACCR0 = 1000;	/*Set TACCR0 which also starts the timer. At
+  TACCR0 = 3000;	/*Set TACCR0 which also starts the timer. At
 				12 kHz, counting to 12000 should output
 				an LED change every 1 second. Try this
 				out and see how inaccurate the VLO can be */
@@ -71,31 +78,40 @@ int main(void) {
 }
 
 interrupt(TIMERA0_VECTOR) TIMERA0_ISR(void) {
-      LED_OUT ^= (LED0 +  BIT7);	//turn on
+  n++;
+  n = n % 9;
 
-/*
-#ifndef BLINK
-  n += 1;
-  n = n % 3;
-#ifdef FORWARD
-  if (n == 0) {
-    LED_OUT ^= (LED0);
-  } else if (n ==1) {
-    LED_OUT ^= (LED1);
-  } else {
-      LED_OUT |= (LED0 + LED1);	//turn on
+
+ switch (n) {
+    case 0:
+      LED_OUT = LED0;
+      break;
+    case 1:
+      LED_OUT = LED1;
+      break;
+    case 2:
+      LED_OUT = LED2;
+      break;
+    case 3:
+      LED_OUT = LED3;
+      break;
+    case 4:
+      LED_OUT = LED4;
+      break;
+    case 5:
+      LED_OUT = LED5;
+      break;
+    case 6:
+      LED_OUT = LED6;
+      break;
+    case 7:
+      LED_OUT = LED7;
+      break;
+    default:
+      LED_OUT = ALL_LEDS;
+      break;
   }
-#else
-  if (n == 2) {
-    LED_OUT ^= (LED0);
-  } else if (n ==1) {
-    LED_OUT ^= (LED1);
-  } else {
-      LED_OUT |= (LED0 + LED1);	//turn on
-  }
-#endif
-#endif
-*/
+
 }
 
 
