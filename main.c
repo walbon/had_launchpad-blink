@@ -77,6 +77,35 @@ int main(void) {
   }
 }
 
+/* Interrupt routine for having led1 flash n times, where n
+ * is defined by setting it equal to the bit number. Just a
+ * method for demonstrating bit twiddling, and ensurin
+ * MSB/LSB things */
+
+int m = 0;
+interrupt(TIMERA0_VECTOR) TIMERA0_ISR(void) {
+    if (n==0) {
+        TACCR0 = 5000;
+        LED_OUT = ALL_LEDS;
+        n = LED3;
+    } else if (m == 0) {
+        LED_OUT = 0;
+        m++;
+        m %= 2;
+    } else {
+        LED_OUT = 0;
+        LED_OUT = LED1;
+        m++;
+        m %=2;
+        n--;
+    }
+}
+
+/*
+ * An intterupt routine that turns on each pin sequentially, then all at once.
+ */
+
+ /*
 interrupt(TIMERA0_VECTOR) TIMERA0_ISR(void) {
   n++;
   n = n % 9;
@@ -113,5 +142,5 @@ interrupt(TIMERA0_VECTOR) TIMERA0_ISR(void) {
   }
 
 }
-
+*/
 
