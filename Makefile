@@ -1,8 +1,8 @@
 PREFIX=/usr/local/msp430-gcc-4.4.3
 CC=$(PREFIX)/bin/msp430-gcc
 
-CFLAGS= -Wall -g -mmcu=msp430x2012
-#CFLAGS=-Os -Wall -g -mmcu=msp430x2012
+#CFLAGS= -Wall -g -mmcu=msp430x2012
+CFLAGS=-Os -Wall -g -mmcu=msp430x2012
 #CFLAGS=-Os -Wall -g -I/opt/msp430-gcc-4.4.5/msp430/include
 
 OBJS=reg.o morse.o main.o

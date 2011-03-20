@@ -42,7 +42,7 @@ void initLEDs(void) {
 
 
 struct SR output;
-int wait = 0;
+volatile int wait = 0;
 
 int to_cbr(uint8_t data, uint8_t bits, uint32_t *data_out, uint8_t *bits_out) {
 	*bits_out = 0;
@@ -63,8 +63,8 @@ int to_cbr(uint8_t data, uint8_t bits, uint32_t *data_out, uint8_t *bits_out) {
 		bits--;
 		data = data >> 1;
 		if (bits > 0) { //loop!
-			//add the space between signals, OFF is 0, so no setting of bits,
-			//just shifting 0 in
+			//add the space between signals (output off, 0), so no setting of bits,
+			//just shifting 0 in, OFF translates to the number of units of no signal
 			*data_out = *data_out << OFF;
 			*bits_out += OFF;
 		} else { //done
