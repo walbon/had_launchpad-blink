@@ -28,34 +28,63 @@ Copyright (c) 2010 - Mike Szczys
 		That the MPS430x2012 is closely related and
 		I haven't observed any problems with using this
 		header file. */
-//#include <msp430g2231.h>
+
 #include <io.h>
 #include <signal.h>
+#include "reg.h"
+#include "morse.h"
 
 #define     LED0                  BIT0
-#define     LED1                  BIT1
-#define     LED2                  BIT2
-#define     LED3                  BIT3
-#define     LED4                  BIT4
-#define     LED5                  BIT5
-#define     LED6                  BIT6
-#define     LED7                  BIT7
-#define     ALL_LEDS              (BIT0 + BIT1 + BIT2 + BIT3 + BIT4 + BIT5 + BIT6 + BIT7)
 #define     LED_DIR               P1DIR
 #define     LED_OUT               P1OUT
-//
-//blink or rot
-//#define BLINK
 
+#define     MASK_N(n)  ( ~(~0<<n))
 
 void initLEDs(void) {
-  LED_DIR |= ALL_LEDS;
-  LED_OUT |= ALL_LEDS;
+  LED_DIR |= LED0;
+  LED_OUT = 0;
 }
 
-int n = 0;
+
+struct SR output;
+
+int to_cbr(int data, int bits, unsigned long *data_out, int *bits_out) {
+	*bits_out = 0;
+	*data_out = 0;
+
+	while (bits < 0) {
+		//convert 1 to
+		if ((data & 1) == 1) {
+			*data_out = *data_out << DASH;
+			*data_out |= MASK_N(DASH);
+			*bits_out += DASH;
+		} else {
+			*data_out = *data_out << DOT;
+			*data_out |= MASK_N(DOT);
+			*bits_out += DOT;
+	  }
+		//add the space between signals, OFF is 0, so no setting of bits,
+		//just shifting 0 in
+		*data_out = *data_out << OFF;
+		*bits_out += OFF;
+		bits--;
+		data = data >> 1;
+	}
+	if (*bits_out < (sizeof(*data_out) * 8)) {
+		return 1;
+	} else {
+		return 0;
+	}
+}
 
 int main(void) {
+	char *string = "hello world\0";
+	unsigned char waiting = 0;
+	int i = 0;
+	int cbrbits=0;
+	unsigned long cbrdata=0;
+	unsigned char mp;
+
 
   WDTCTL = WDTPW + WDTHOLD;	// Stop WDT
 
@@ -72,8 +101,39 @@ int main(void) {
 
   WRITE_SR(GIE);	//Enable global interrupts
 
+	SR_init(&output);
+
   while(1) {
-	//Loop forever, interrupts take care of the rest
+		// have data ready to put in the output struct
+		if (!waiting) {
+			if ((string[i] == ' ') || (string[i] == '\0')) {
+				cbrdata = 0;
+				cbrbits = 0;
+			} else {
+				mp = convert_ascii(string[i]);
+				to_cbr(M_VAL(mp), M_SIZE(mp), &cbrdata, &cbrbits);
+			}
+			if (string[i] == '\0') {
+				i = 0;
+			} else {
+				i++;
+			}
+			waiting = 1;
+		}
+
+		// if there is room, put the stuff in the register
+		if (waiting) {
+			if (cbrbits && SR_WRITEABLE(&output,cbrbits+LS)) {
+				SR_write(&output, cbrdata, cbrbits);
+				//letter pause
+				SR_write(&output, 0x0, LS);
+				waiting = 0;
+			} else if (SR_WRITEABLE(&output, WS)){
+				// must be space or \0, put in WS
+				SR_write(&output, 0x0, WS);
+				waiting = 0;
+			}
+		}
   }
 }
 
@@ -82,65 +142,12 @@ int main(void) {
  * method for demonstrating bit twiddling, and ensurin
  * MSB/LSB things */
 
-int m = 0;
 interrupt(TIMERA0_VECTOR) TIMERA0_ISR(void) {
-    if (n==0) {
-        TACCR0 = 5000;
-        LED_OUT = ALL_LEDS;
-        n = LED3;
-    } else if (m == 0) {
-        LED_OUT = 0;
-        m++;
-        m %= 2;
-    } else {
-        LED_OUT = 0;
-        LED_OUT = LED1;
-        m++;
-        m %=2;
-        n--;
-    }
+	if (SR_read(&output)) {
+		LED_OUT = LED0;
+	} else {
+		LED_OUT = 0;
+	}
 }
 
-/*
- * An intterupt routine that turns on each pin sequentially, then all at once.
- */
-
- /*
-interrupt(TIMERA0_VECTOR) TIMERA0_ISR(void) {
-  n++;
-  n = n % 9;
-
-
- switch (n) {
-    case 0:
-      LED_OUT = LED0;
-      break;
-    case 1:
-      LED_OUT = LED1;
-      break;
-    case 2:
-      LED_OUT = LED2;
-      break;
-    case 3:
-      LED_OUT = LED3;
-      break;
-    case 4:
-      LED_OUT = LED4;
-      break;
-    case 5:
-      LED_OUT = LED5;
-      break;
-    case 6:
-      LED_OUT = LED6;
-      break;
-    case 7:
-      LED_OUT = LED7;
-      break;
-    default:
-      LED_OUT = ALL_LEDS;
-      break;
-  }
-
-}
-*/
 
