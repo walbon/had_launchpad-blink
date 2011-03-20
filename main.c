@@ -35,14 +35,15 @@ Copyright (c) 2010 - Mike Szczys
 #include "morse.h"
 
 #define     LED0                  BIT0
+#define     LED1                  BIT6
 #define     LED_DIR               P1DIR
 #define     LED_OUT               P1OUT
 
 #define     MASK_N(n)  ( ~(~0<<n))
 
 void initLEDs(void) {
-  LED_DIR |= LED0;
-  LED_OUT = 0;
+  LED_DIR |= LED0 + LED1;
+  LED_OUT = LED1;
 }
 
 
@@ -54,7 +55,7 @@ int to_cbr(int data, int bits, unsigned long *data_out, int *bits_out) {
 
 	while (bits < 0) {
 		//convert 1 to
-		if ((data & 1) == 1) {
+		if ((data & 1)) {
 			*data_out = *data_out << DASH;
 			*data_out |= MASK_N(DASH);
 			*bits_out += DASH;
@@ -128,12 +129,16 @@ int main(void) {
 				//letter pause
 				SR_write(&output, 0x0, LS);
 				waiting = 0;
+
+				LED_OUT &= ~LED1;
 			} else if (SR_WRITEABLE(&output, WS)){
 				// must be space or \0, put in WS
 				SR_write(&output, 0x0, WS);
 				waiting = 0;
 			}
+			//LED_OUT |= LED1;
 		}
+
   }
 }
 
@@ -144,9 +149,9 @@ int main(void) {
 
 interrupt(TIMERA0_VECTOR) TIMERA0_ISR(void) {
 	if (SR_read(&output)) {
-		LED_OUT = LED0;
+		LED_OUT |= LED0;
 	} else {
-		LED_OUT = 0;
+		LED_OUT &= ~LED0;
 	}
 }
 

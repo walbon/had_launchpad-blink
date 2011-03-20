@@ -43,3 +43,8 @@ int SR_read(struct SR *reg) {
 	return res;
 }
 
+void SR_init(struct SR *reg) {
+	reg->pos = 0;
+	reg->data = 0;
+	return;
+}

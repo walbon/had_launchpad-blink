@@ -1,6 +1,6 @@
 #include "morse.h"
 
-const unsigned char convert_ascii(char f) {
+unsigned char convert_ascii(char f) {
 	if (INR(f,97,122)) {
 		//ascii lowercase, make uppercase
 		f -= 32;
@@ -81,7 +81,10 @@ const unsigned char convert_ascii(char f) {
 				return L_8;
 			case '9':
 				return L_9;
+			default:
+				return BAD_ASCII;
 		}
+		return BAD_ASCII;
 	}
 }
 
