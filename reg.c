@@ -5,20 +5,21 @@
  *     int val        : the bits to add to a register
  *     int bits       : the count from LSB of bits that are significant
  */
-void SR_write(struct SR *reg, int val, int bits) {
-	int mask = 0;
-	int i = 0;
+void SR_write(struct SR *reg, uint32_t val, uint8_t bits) {
+	uint32_t mask = 0;
 
 	// move the value into the correct position
 	val = val << reg->pos;
-	// make a mask that is 0 except the bits we care about,
-	// those are 1. The mask will be used to ensure proper setting
-	// of the data later
-	i = reg->pos + bits - 1;
-	while (i >= reg->pos) {
-		mask |= 1 << i;
-		i--;
-	}
+	/* this mask first opens all bits up to the highest one we want
+	 * then undoes those lower than we want vi a the magic of xor
+	 * eg if pos = 2 and bits = 2, it does:
+	 * mask = 00000000
+	 * mask = 00001111
+	 * mask = 00001100 */
+
+	mask = MASK_N(reg->pos + bits);
+	mask ^= MASK_N(reg->pos);
+
 	// clear the bits in the register that we now wish to set.
 	reg->data &= ~mask;
 	// make sure our value is 0 except for the bits we defined as important

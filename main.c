@@ -21,16 +21,10 @@ Copyright (c) 2010 - Mike Szczys
 */
 
 //#include <msp430x20x2.h>  <-taken care of by including io.h and setting -mmcu=msp430x2012 in cflags
-	/* It's interesting to note that this is not the header
-		file for the chip we are using. This source code
-		is intended for the MSP430G2231 but there's no
-		header file for that specific ship. It apprears
-		That the MPS430x2012 is closely related and
-		I haven't observed any problems with using this
-		header file. */
 
 #include <io.h>
 #include <signal.h>
+#include <sys/inttypes.h>
 #include "reg.h"
 #include "morse.h"
 
@@ -39,7 +33,7 @@ Copyright (c) 2010 - Mike Szczys
 #define     LED_DIR               P1DIR
 #define     LED_OUT               P1OUT
 
-#define     MASK_N(n)  ( ~(~0<<n))
+#define     TIMER                 1000
 
 void initLEDs(void) {
   LED_DIR |= LED0 + LED1;
@@ -48,12 +42,13 @@ void initLEDs(void) {
 
 
 struct SR output;
+int wait = 0;
 
-int to_cbr(int data, int bits, unsigned long long *data_out, int *bits_out) {
+int to_cbr(uint8_t data, uint8_t bits, uint32_t *data_out, uint8_t *bits_out) {
 	*bits_out = 0;
 	*data_out = 0;
 
-	while (bits > 0) {
+	while (1) {
 		//convert 1 to
 		if ((data & 1)) {
 			*data_out = *data_out << DASH;
@@ -63,13 +58,18 @@ int to_cbr(int data, int bits, unsigned long long *data_out, int *bits_out) {
 			*data_out = *data_out << DOT;
 			*data_out |= MASK_N(DOT);
 			*bits_out += DOT;
-	  }
-		//add the space between signals, OFF is 0, so no setting of bits,
-		//just shifting 0 in
-		*data_out = *data_out << OFF;
-		*bits_out += OFF;
+		}
+		// for next loop
 		bits--;
 		data = data >> 1;
+		if (bits > 0) { //loop!
+			//add the space between signals, OFF is 0, so no setting of bits,
+			//just shifting 0 in
+			*data_out = *data_out << OFF;
+			*bits_out += OFF;
+		} else { //done
+			break;
+		}
 	}
 	if (*bits_out < (sizeof(*data_out) * 8)) {
 		return 1;
@@ -78,82 +78,66 @@ int to_cbr(int data, int bits, unsigned long long *data_out, int *bits_out) {
 	}
 }
 
-void bockwrite(struct SR *output, unsigned long long data, int bits) {
-	while (1) {
-		if (SR_WRITEABLE(output, bits)) {
-			SR_write(output, data, bits);
-			return;
-		}
+void blockwrite(struct SR *sr, uint32_t data, uint8_t bits) {
+	if (!SR_WRITEABLE(sr, bits)) {
+		wait = (bits + sr->pos) - 32;
+		LED_OUT &= ~LED1;
 	}
+	while (wait) {
+		//loop till something else makes wait go to 0
+
+	}
+	if (1) LED_OUT |= LED1;
+	SR_write(sr, data, bits);
+	return;
 }
 
-int main(void) {
-	char *string = "hello world\0";
-	unsigned char waiting = 0;
-	int i = 0;
-	short started = 0;
-	int cbrbits=0;
-	unsigned long long cbrdata=0;
-	unsigned char mp;
+inline void magic() {
+	WDTCTL = WDTPW + WDTHOLD;	// Stop WDT
 
 
-  WDTCTL = WDTPW + WDTHOLD;	// Stop WDT
+	BCSCTL3 |= LFXT1S_2;	//Set ACLK to use internal VLO (12 kHz clock)
 
-  initLEDs();		//Setup LEDs
-
-  BCSCTL3 |= LFXT1S_2;	//Set ACLK to use internal VLO (12 kHz clock)
-
-  TACTL = TASSEL_1 | MC_1;	//Set TimerA to use auxiliary clock in UP mode
-  TACCTL0 = CCIE;	//Enable the interrupt for TACCR0 match
-  TACCR0 = 3000;	/*Set TACCR0 which also starts the timer. At
+	TACTL = TASSEL_1 | MC_1;	//Set TimerA to use auxiliary clock in UP mode
+	TACCTL0 = CCIE;	//Enable the interrupt for TACCR0 match
+	TACCR0 = TIMER;	/*Set TACCR0 which also starts the timer. At
 				12 kHz, counting to 12000 should output
 				an LED change every 1 second. Try this
 				out and see how inaccurate the VLO can be */
 
-  WRITE_SR(GIE);	//Enable global interrupts
+	WRITE_SR(GIE);	//Enable global interrupts
+	return;
+}
+
+int main(void) {
+	char *string = "hello world\0";
+	int i = 0;
+	uint8_t cbrbits = 0;
+	uint32_t cbrdata = 0;
+	uint8_t mp;
+
+	// setup stuff i don't fully understand
+	magic();
+	initLEDs();		//Setup LEDs
 
 	SR_init(&output);
 
-  while(1) {
+	while(1) {
 		// have data ready to put in the output struct
-		if (!waiting) {
-			if ((*(string+ i) == ' ') || (*(string + i) == '\0')) {
-				cbrdata = 0;
-				cbrbits = 0;
-			} else {
-				mp = convert_ascii(*(string + i));
-				to_cbr(M_VAL(mp), M_SIZE(mp), &cbrdata, &cbrbits);
-			}
-			if (*(string + i) == '\0') {
-				i = 0;
-			} else {
-				i++;
-			}
-			waiting = 1;
+		if ((*(string + i) == ' ')) {
+			blockwrite(&output, 0x0, WS);
+			i++;
+		} else if((*(string + i) == '\0')){
+			blockwrite(&output, 0x0, WS);
+			i = 0;
+		} else {
+			mp = convert_ascii(*(string + i));
+			to_cbr(M_VAL(mp), M_SIZE(mp), &cbrdata, &cbrbits);
+			blockwrite(&output, cbrdata, cbrbits);
+			blockwrite(&output, 0x0, LS);
+			i++;
 		}
-
-		// if there is room, put the stuff in the register
-		if (waiting) {
-			if (cbrbits && SR_WRITEABLE(&output,cbrbits+LS)) {
-				SR_write(&output, cbrdata, cbrbits);
-				//letter pause
-				SR_write(&output, 0x0, LS);
-				waiting = 0;
-
-			} else if (SR_WRITEABLE(&output, WS)){
-				// must be space or \0, put in WS
-				SR_write(&output, 0x0, WS);
-				waiting = 0;
-			}
-			LED_OUT &= ~LED1;
-		} else { LED_OUT |= LED1;}
-		//if (!started) {
-		//	started = 1;
-		//	TACCR0 = 3000;
-		//}
-		//if(*(string + 0) == 'h') LED_OUT &= ~LED1;
-
-  }
+	}
 }
 
 /* Interrupt routine for having led1 flash n times, where n
@@ -167,7 +151,6 @@ interrupt(TIMERA0_VECTOR) TIMERA0_ISR(void) {
 	} else {
 		LED_OUT &= ~LED0;
 	}
+	wait--;
 	return;
 }
-
-

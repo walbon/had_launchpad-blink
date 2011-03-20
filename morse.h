@@ -1,5 +1,6 @@
 #ifndef _MORSE_H
 #define _MORSE_H
+#include <sys/inttypes.h>
 // unit is just a base lenght of time -- setting up a
 // sane default just in case we don't -D it later
 
@@ -25,5 +26,5 @@
 #define M_VAL(val)  (val & 0x1f)
 #define INR(v, a, b) ((v >= a) && (v <=b))
 
-unsigned char convert_ascii(char f);
+uint8_t convert_ascii(char f);
 #endif
