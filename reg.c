@@ -1,4 +1,8 @@
+/* reg.{c,h} make what is essentially a shift register in code. this allows
+ * the writing of n bits at the end, and pulling from the "front" (LSB).
+ */
 #include "reg.h"
+
 /* SR_write: add n bits to a shift register.
  * inputs:
  *     struct SR *reg : the register to write
