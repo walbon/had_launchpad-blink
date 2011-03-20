@@ -4,7 +4,7 @@ CC=$(PREFIX)/bin/msp430-gcc
 CFLAGS=-Os -Wall -g -mmcu=msp430x2012
 #CFLAGS=-Os -Wall -g -I/opt/msp430-gcc-4.4.5/msp430/include
 
-OBJS=main.o
+OBJS=reg.o morse.o main.o
 
 
 all: $(OBJS)

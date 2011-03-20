@@ -1,3 +1,4 @@
+#include "reg.h"
 /* SR_write: add n bits to a shift register.
  * inputs:
  *     struct SR *reg : the register to write
