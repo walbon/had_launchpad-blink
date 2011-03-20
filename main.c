@@ -49,11 +49,11 @@ void initLEDs(void) {
 
 struct SR output;
 
-int to_cbr(int data, int bits, unsigned long *data_out, int *bits_out) {
+int to_cbr(int data, int bits, unsigned long long *data_out, int *bits_out) {
 	*bits_out = 0;
 	*data_out = 0;
 
-	while (bits < 0) {
+	while (bits > 0) {
 		//convert 1 to
 		if ((data & 1)) {
 			*data_out = *data_out << DASH;
@@ -78,12 +78,22 @@ int to_cbr(int data, int bits, unsigned long *data_out, int *bits_out) {
 	}
 }
 
+void bockwrite(struct SR *output, unsigned long long data, int bits) {
+	while (1) {
+		if (SR_WRITEABLE(output, bits)) {
+			SR_write(output, data, bits);
+			return;
+		}
+	}
+}
+
 int main(void) {
 	char *string = "hello world\0";
 	unsigned char waiting = 0;
 	int i = 0;
+	short started = 0;
 	int cbrbits=0;
-	unsigned long cbrdata=0;
+	unsigned long long cbrdata=0;
 	unsigned char mp;
 
 
@@ -107,14 +117,14 @@ int main(void) {
   while(1) {
 		// have data ready to put in the output struct
 		if (!waiting) {
-			if ((string[i] == ' ') || (string[i] == '\0')) {
+			if ((*(string+ i) == ' ') || (*(string + i) == '\0')) {
 				cbrdata = 0;
 				cbrbits = 0;
 			} else {
-				mp = convert_ascii(string[i]);
+				mp = convert_ascii(*(string + i));
 				to_cbr(M_VAL(mp), M_SIZE(mp), &cbrdata, &cbrbits);
 			}
-			if (string[i] == '\0') {
+			if (*(string + i) == '\0') {
 				i = 0;
 			} else {
 				i++;
@@ -130,14 +140,18 @@ int main(void) {
 				SR_write(&output, 0x0, LS);
 				waiting = 0;
 
-				LED_OUT &= ~LED1;
 			} else if (SR_WRITEABLE(&output, WS)){
 				// must be space or \0, put in WS
 				SR_write(&output, 0x0, WS);
 				waiting = 0;
 			}
-			//LED_OUT |= LED1;
-		}
+			LED_OUT &= ~LED1;
+		} else { LED_OUT |= LED1;}
+		//if (!started) {
+		//	started = 1;
+		//	TACCR0 = 3000;
+		//}
+		//if(*(string + 0) == 'h') LED_OUT &= ~LED1;
 
   }
 }
@@ -153,6 +167,7 @@ interrupt(TIMERA0_VECTOR) TIMERA0_ISR(void) {
 	} else {
 		LED_OUT &= ~LED0;
 	}
+	return;
 }
 
 

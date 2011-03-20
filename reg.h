@@ -2,7 +2,7 @@
 #define _REG_H
 struct SR {
 	unsigned char pos;
-	unsigned long data;
+	unsigned long long data;
 };
 
 #define SR_READABLE(reg) ((reg)->pos > 0)
