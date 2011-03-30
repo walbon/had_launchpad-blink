@@ -80,7 +80,7 @@ int to_cbr(uint8_t data, uint8_t bits, uint32_t *data_out, uint8_t *bits_out) {
 
 void blockwrite(struct SR *sr, uint32_t data, uint8_t bits) {
 	if (!SR_WRITEABLE(sr, bits)) {
-		wait = (bits + sr->pos) - 32;
+		wait = (bits + sr->pos) - 31;
 		LED_OUT &= ~LED1;
 	}
 	while (wait) {

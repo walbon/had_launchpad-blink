@@ -1,6 +1,7 @@
 #ifndef _MORSE_H
 #define _MORSE_H
-#include <sys/inttypes.h>
+//#include <sys/inttypes.h>
+#include <stdint.h>
 // unit is just a base lenght of time -- setting up a
 // sane default just in case we don't -D it later
 

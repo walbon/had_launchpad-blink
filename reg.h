@@ -1,6 +1,7 @@
 #ifndef _REG_H
 #define _REG_H
-#include <sys/inttypes.h>
+//#include <sys/inttypes.h>
+#include <stdint.h>
 
 #define     MASK_N(n)  ( ~(~0<<(n)))
 
