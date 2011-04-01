@@ -9,7 +9,7 @@ volatile int wait = 0;
 struct SR output;
 struct itimerval mytimer;
 
-void pbin(uint32_t val) {
+void pbin(srdata val) {
 	int x = sizeof(val) * 8;
 	while(x > 0) {
 		printf("%d", val & 1);
@@ -18,12 +18,12 @@ void pbin(uint32_t val) {
 	}
 }
 
-void blockwrite(struct SR *sr, uint32_t data, uint8_t bits) {
+void blockwrite(struct SR *sr, srdata data, uint8_t bits) {
 	//printf("blockwrite: ");
 	//pbin(data);
 	//printf(", %d\n", bits);
 	if (!SR_WRITEABLE(sr, bits)) {
-		wait = (bits + sr->pos) - 31;
+		wait = (bits + sr->pos) - ((sizeof(sr->data)*8)-1);
 		//printf("pausing, wait: %d\n", wait);
 		//LED_OUT &= ~LED1;
 	}
@@ -42,7 +42,7 @@ void blockwrite(struct SR *sr, uint32_t data, uint8_t bits) {
 	return;
 }
 
-int to_cbr(uint8_t data, uint8_t bits, uint32_t *data_out, uint8_t *bits_out) {
+int to_cbr(uint8_t data, uint8_t bits, srdata *data_out, uint8_t *bits_out) {
 	*bits_out = 0;
 	*data_out = 0;
 
@@ -91,7 +91,7 @@ int main(int argc, const char *argv[])
 	char *string = "hello world\0";
 	int i = 0;
 	uint8_t cbrbits = 0;
-	uint32_t cbrdata = 0;
+	srdata cbrdata = 0;
 	uint8_t mp;
 
 	SR_init(&output);

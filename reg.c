@@ -9,8 +9,8 @@
  *     int val        : the bits to add to a register
  *     int bits       : the count from LSB of bits that are significant
  */
-void SR_write(struct SR *reg, uint32_t val, uint8_t bits) {
-	uint32_t mask = 0;
+void SR_write(struct SR *reg, srdata val, uint8_t bits) {
+	srdata mask = 0;
 
 	// move the value into the correct position
 	val = val << reg->pos;

@@ -44,7 +44,7 @@ void initLEDs(void) {
 struct SR output;
 volatile int wait = 0;
 
-int to_cbr(uint8_t data, uint8_t bits, uint32_t *data_out, uint8_t *bits_out) {
+int to_cbr(uint8_t data, uint8_t bits, srdata *data_out, uint8_t *bits_out) {
 	*bits_out = 0;
 	*data_out = 0;
 
@@ -78,9 +78,9 @@ int to_cbr(uint8_t data, uint8_t bits, uint32_t *data_out, uint8_t *bits_out) {
 	}
 }
 
-void blockwrite(struct SR *sr, uint32_t data, uint8_t bits) {
+void blockwrite(struct SR *sr, srdata data, uint8_t bits) {
 	if (!SR_WRITEABLE(sr, bits)) {
-		wait = (bits + sr->pos) - 31;
+		wait = (bits + sr->pos) - ((sizeof(sr->data)*8) - 1);
 		LED_OUT &= ~LED1;
 	}
 	while (wait) {
@@ -110,10 +110,10 @@ inline void magic() {
 }
 
 int main(void) {
-	char *string = "hello world\0";
+	char *string = "hello judith pond\0";
 	int i = 0;
 	uint8_t cbrbits = 0;
-	uint32_t cbrdata = 0;
+	srdata cbrdata = 0;
 	uint8_t mp;
 
 	// setup stuff i don't fully understand
