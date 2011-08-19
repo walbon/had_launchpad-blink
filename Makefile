@@ -1,5 +1,4 @@
-#PREFIX=/usr/local/msp430-gcc-4.4.3
-PREFIX=/opt/msp430-gcc-4.4.5
+PREFIX=/opt/msp430-gcc-4.4.3
 CC=$(PREFIX)/bin/msp430-gcc
 
 #CFLAGS= -Wall -g -mmcu=msp430x2012
